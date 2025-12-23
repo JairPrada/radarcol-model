@@ -293,6 +293,35 @@ def root():
 
 
 @app.get(
+    "/health",
+    tags=["Información General"],
+    summary="Health check optimizado",
+    description="""Endpoint de health check ligero para monitoring y keep-alive.
+    
+    **Uso recomendado:**
+    - Configurar en UptimeRobot (https://uptimerobot.com) con ping cada 5 minutos
+    - Configurar en cron-job.org con ejecución cada 5 minutos
+    - Usar en CI/CD para verificar disponibilidad
+    
+    Este endpoint mantiene el servicio activo en Render evitando el "cold start".
+    """,
+    response_description="Estado del servicio y timestamp"
+)
+def health_check():
+    """Health check optimizado para mantener el servicio activo.
+    
+    Returns:
+        dict: Estado, timestamp y uptime del servicio
+    """
+    return {
+        "status": "healthy",
+        "timestamp": datetime.utcnow().isoformat() + "Z",
+        "service": "radarcol-api",
+        "version": "1.0.0"
+    }
+
+
+@app.get(
     "/contratos", 
     response_model=ContratosResponseModel,
     tags=["Análisis de Contratos"],
@@ -558,48 +587,101 @@ def obtener_analisis_contrato(id: str):
         ContratoAnalisisResponseModel: Datos del contrato y análisis completo con explicabilidad
         
     Note:
-        Los datos retornados son simulados. En producción, se obtendrán del modelo ML real.
+        Los datos del contrato son reales de datos.gov.co. El análisis (SHAP values, recomendaciones) 
+        está mockeado hasta conectar con el modelo ML real.
     """
     
     # ====================================================================
-    # 🎭 DATOS MOCKEADOS - Para desarrollo y testing
+    # 📡 OBTENER DATOS REALES DEL CONTRATO
     # ====================================================================
     
-    # Datos del contrato mockeados
+    # Consultar contrato específico por ID en la API de datos.gov.co
+    params = {
+        "$where": f"id_contrato = '{id}'",
+        "$limit": 1
+    }
+    
+    response = requests.get(BASE_URL, params=params)
+    
+    if response.status_code != 200:
+        raise HTTPException(
+            status_code=500,
+            detail={
+                "error": "No se pudo obtener la información del contrato",
+                "status_code": response.status_code,
+                "message": "Error en la comunicación con la API de datos.gov.co"
+            }
+        )
+    
+    data = response.json()
+    
+    if not data or len(data) == 0:
+        raise HTTPException(
+            status_code=404,
+            detail={
+                "error": "Contrato no encontrado",
+                "id": id,
+                "message": f"No se encontró ningún contrato con el ID '{id}'"
+            }
+        )
+    
+    contrato = data[0]
+    
+    # Extraer y procesar datos reales del contrato
+    descripcion_original = contrato.get("objeto_del_contrato", "Sin descripción")
+    descripcion_estandarizada = estandarizar_texto(descripcion_original)
+    
+    monto = contrato.get("valor_del_contrato", "0")
+    fecha_inicio = contrato.get("fecha_de_inicio_del_contrato")
+    
+    # Generar análisis de riesgo simulado
+    nivel_riesgo = random.choice(list(NivelRiesgo))
+    anomalia = round(random.uniform(0, 100), 2)
+    
+    # Datos del contrato reales
     contract_data = ContractDetailModel(
         id=id,
-        codigo="CO-2025-123456",
-        descripcion="Construcción y mejoramiento de vías terciarias en el departamento de Cundinamarca, incluyendo obras de drenaje, señalización y estabilización de taludes",
-        entidad="Ministerio de Transporte",
-        monto="2500000000",
-        fechaInicio="2025-01-15",
-        nivelRiesgo=NivelRiesgo.ALTO,
-        anomalia=85.5
+        codigo=contrato.get("id_contrato", id),
+        descripcion=descripcion_estandarizada,
+        entidad=contrato.get("nombre_entidad", "Entidad no especificada"),
+        monto=str(monto),
+        fechaInicio=fecha_inicio,
+        nivelRiesgo=nivel_riesgo,
+        anomalia=anomalia
     )
     
-    # Análisis mockeado con datos realistas
+    # ====================================================================
+    # 🎭 ANÁLISIS MOCKEADO (hasta integrar modelo ML real)
+    # ====================================================================
+    
+    # Calcular duración estimada del contrato
+    duracion_dias = "N/A"
+    if fecha_inicio and contrato.get("plazo_de_ejec_del_contrato"):
+        duracion_dias = str(contrato.get("plazo_de_ejec_del_contrato", "N/A"))
+    
+    # Análisis mockeado con datos dinámicos basados en el contrato real
     analysis_data = AnalysisModel(
         contractId=id,
-        resumenEjecutivo="""Este contrato presenta un nivel de riesgo alto (85.5% de probabilidad de anomalía) debido a varios factores críticos identificados por el modelo de análisis. El monto del contrato ($2.500 millones COP) es significativamente superior al promedio histórico para proyectos similares en la región, lo cual representa una señal de alerta importante.
+        resumenEjecutivo=f"""Este contrato de {contract_data.entidad} presenta un nivel de riesgo {nivel_riesgo.value.lower()} ({anomalia:.1f}% de probabilidad de anomalía) según el análisis del modelo predictivo. El monto del contrato (${monto} COP) ha sido evaluado en relación con contratos similares en el sector.
 
-El análisis revela que la combinación de contratación directa como modalidad de selección, junto con una duración proyectada de 365 días, aumenta considerablemente la exposición al riesgo. Históricamente, contratos con estas características han mostrado una mayor incidencia de sobrecostos y retrasos en la ejecución.
+El análisis identifica varios factores clave que influyen en la evaluación de riesgo. La naturaleza del contrato ({descripcion_estandarizada[:100]}...) y las características específicas de la entidad contratante son elementos considerados en el modelo de predicción.
 
-Se recomienda implementar mecanismos de supervisión reforzada y establecer hitos de control trimestral para mitigar los riesgos identificados. La entidad contratante debe considerar la viabilidad de un proceso de selección más competitivo que permita mayor transparencia y mejores condiciones contractuales.""",
+Se recomienda implementar mecanismos de supervisión acordes al nivel de riesgo identificado y establecer controles periódicos para el seguimiento del contrato. La entidad contratante debe mantener especial atención en los indicadores de cumplimiento y ejecución presupuestal.""",
         
         factoresPrincipales=[
-            "Monto del contrato significativamente superior al promedio de mercado para obras similares (desviación de +45%)",
-            "Modalidad de contratación directa sin proceso competitivo previo",
-            "Duración del contrato (365 días) excede el promedio histórico para proyectos de infraestructura vial de esta magnitud",
-            "Histórico de la entidad contratante muestra 3 contratos similares con adiciones presupuestales superiores al 20%",
-            "Ubicación geográfica del proyecto en zona de difícil acceso, aumentando complejidad logística"
+            f"Monto del contrato: ${monto} COP - Factor principal en la evaluación de riesgo",
+            f"Entidad contratante: {contract_data.entidad} - Análisis de histórico institucional",
+            f"Alcance del contrato: {descripcion_estandarizada[:150]}",
+            f"Fecha de inicio programada: {fecha_inicio or 'No especificada'} - Afecta timeline de ejecución",
+            "Contexto sectorial y comparativa con contratos similares en la base de datos"
         ],
         
         recomendaciones=[
-            "Establecer un comité de supervisión técnica con revisiones mensuales obligatorias del avance físico y financiero",
-            "Implementar sistema de alertas tempranas para detectar desviaciones en cronograma o presupuesto superiores al 10%",
-            "Solicitar garantías adicionales de cumplimiento por el 30% del valor del contrato debido al alto nivel de riesgo identificado",
-            "Realizar auditorías técnicas trimestrales por parte de un tercero independiente especializado en infraestructura vial",
-            "Establecer cláusulas de penalización por incumplimiento con valores disuasivos (mínimo 1% del valor por semana de retraso)"
+            f"Establecer comité de supervisión con revisiones {'mensuales' if nivel_riesgo == NivelRiesgo.ALTO else 'trimestrales'} del avance",
+            "Implementar sistema de alertas tempranas para detectar desviaciones en cronograma o presupuesto",
+            f"{'Solicitar garantías adicionales por el alto nivel de riesgo identificado' if nivel_riesgo == NivelRiesgo.ALTO else 'Mantener garantías estándar según normativa vigente'}",
+            "Realizar auditorías técnicas periódicas por parte de un tercero independiente",
+            "Establecer cláusulas de cumplimiento claras y mecanismos de penalización proporcionales"
         ],
         
         shapValues=[
@@ -607,25 +689,25 @@ Se recomienda implementar mecanismos de supervisión reforzada y establecer hito
                 variable="monto_contrato",
                 value=15.2,
                 description="Monto del contrato",
-                actualValue="2500000000"
+                actualValue=str(monto)
             ),
             ShapValueModel(
                 variable="tipo_contratacion",
                 value=12.3,
                 description="Tipo de contratación",
-                actualValue="Contratación directa"
+                actualValue=contrato.get("tipo_de_contrato", "No especificado")
             ),
             ShapValueModel(
                 variable="duracion_dias",
                 value=10.8,
                 description="Duración en días",
-                actualValue="365"
+                actualValue=duracion_dias
             ),
             ShapValueModel(
-                variable="historico_entidad",
+                variable="entidad_contratante",
                 value=8.5,
-                description="Histórico de la entidad",
-                actualValue="3 contratos con adiciones >20%"
+                description="Entidad contratante",
+                actualValue=contract_data.entidad
             ),
             ShapValueModel(
                 variable="ubicacion_geografica",
