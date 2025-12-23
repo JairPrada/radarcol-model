@@ -19,6 +19,56 @@ API FastAPI para el análisis y consulta de contratos del sector público colomb
 - **Python-dotenv** 1.0.0 - Gestión de variables de entorno
 - **Requests** 2.32.3 - Cliente HTTP
 
+## 📁 Estructura del Proyecto
+
+```
+backend/
+├── app/                          # Paquete principal de la aplicación
+│   ├── __init__.py
+│   ├── main.py                   # Punto de entrada FastAPI
+│   ├── config/                   # Configuraciones
+│   │   ├── __init__.py
+│   │   └── settings.py          # Variables de entorno y configuración
+│   ├── constants/               # Constantes y documentación
+│   │   ├── __init__.py
+│   │   └── documentation.py     # Textos de documentación de la API
+│   ├── models/                  # Modelos Pydantic
+│   │   ├── __init__.py
+│   │   └── schemas.py           # DTOs y modelos de datos
+│   ├── middlewares/             # Middlewares personalizados
+│   │   ├── __init__.py
+│   │   └── logging.py           # Middleware de logging
+│   ├── services/                # Lógica de negocio
+│   │   ├── __init__.py
+│   │   └── contract_service.py  # Servicio de contratos
+│   ├── controllers/             # Controladores/Rutas
+│   │   ├── __init__.py
+│   │   ├── health.py            # Endpoints de salud
+│   │   └── contracts.py         # Endpoints de contratos
+│   └── utils/                   # Utilidades
+│       ├── __init__.py
+│       └── text_formatter.py    # Funciones de formateo
+├── main_entry.py                # Wrapper de compatibilidad
+├── requirements.txt             # Dependencias Python
+├── .env                         # Variables de entorno (local)
+├── .env.example                # Template de variables
+├── .gitignore                  # Archivos ignorados por Git
+├── README.md                   # Documentación
+└── KEEP_ALIVE.md              # Guía de keep-alive
+```
+
+### 🎯 Arquitectura
+
+El proyecto sigue una **arquitectura limpia** con separación de responsabilidades:
+
+- **config/**: Configuración centralizada y variables de entorno
+- **constants/**: Constantes y textos reutilizables
+- **models/**: Modelos de datos con validación Pydantic
+- **middlewares/**: Procesamiento de peticiones/respuestas
+- **services/**: Lógica de negocio y casos de uso
+- **controllers/**: Endpoints y manejo de peticiones HTTP
+- **utils/**: Funciones auxiliares y utilidades
+
 ## 📦 Instalación Local
 
 ### Requisitos Previos
@@ -72,7 +122,7 @@ LOG_LEVEL=INFO
 5. **Ejecutar el servidor**
 
 ```bash
-uvicorn main:app --reload --host 0.0.0.0 --port 8000
+uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 ```
 
 6. **Acceder a la documentación**
@@ -92,7 +142,7 @@ uvicorn main:app --reload --host 0.0.0.0 --port 8000
    - **Name**: `radarcol-api` (o el nombre que prefieras)
    - **Environment**: `Python 3`
    - **Build Command**: `pip install -r requirements.txt`
-   - **Start Command**: `uvicorn main:app --host 0.0.0.0 --port $PORT`
+   - **Start Command**: `uvicorn app.main:app --host 0.0.0.0 --port $PORT`
 
 3. **Variables de Entorno** (⚠️ MUY IMPORTANTE)
 

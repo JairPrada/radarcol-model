@@ -1,0 +1,24 @@
+"""Archivo de inicialización del módulo constants."""
+from .documentation import (
+    API_TITLE,
+    API_VERSION,
+    API_DESCRIPTION,
+    API_TERMS_OF_SERVICE,
+    API_CONTACT,
+    API_LICENSE_INFO,
+    CONTRATOS_DESCRIPTION,
+    ANALISIS_DESCRIPTION,
+    HEALTH_CHECK_DESCRIPTION
+)
+
+__all__ = [
+    "API_TITLE",
+    "API_VERSION",
+    "API_DESCRIPTION",
+    "API_TERMS_OF_SERVICE",
+    "API_CONTACT",
+    "API_LICENSE_INFO",
+    "CONTRATOS_DESCRIPTION",
+    "ANALISIS_DESCRIPTION",
+    "HEALTH_CHECK_DESCRIPTION"
+]
