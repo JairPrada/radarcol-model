@@ -19,6 +19,12 @@ HOST = os.getenv("HOST", "0.0.0.0")
 BASE_URL = os.getenv("BASE_URL", "https://www.datos.gov.co/resource/jbjy-vk9h.json")
 
 # =====================================
+# Configuración del Motor de Análisis
+# =====================================
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", None)
+RUTA_ARTEFACTOS = os.getenv("RUTA_ARTEFACTOS", "artefactos")
+
+# =====================================
 # Configuración CORS
 # =====================================
 CORS_ORIGINS_ENV = os.getenv("CORS_ORIGINS", "")

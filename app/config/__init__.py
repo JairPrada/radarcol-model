@@ -5,7 +5,9 @@ from .settings import (
     BASE_URL,
     CORS_ORIGINS_ENV,
     ALLOWED_ORIGINS,
-    LOG_LEVEL
+    LOG_LEVEL,
+    GEMINI_API_KEY,
+    RUTA_ARTEFACTOS
 )
 
 __all__ = [
@@ -14,5 +16,7 @@ __all__ = [
     "BASE_URL",
     "CORS_ORIGINS_ENV",
     "ALLOWED_ORIGINS",
-    "LOG_LEVEL"
+    "LOG_LEVEL",
+    "GEMINI_API_KEY",
+    "RUTA_ARTEFACTOS"
 ]

@@ -117,6 +117,10 @@ HOST=0.0.0.0
 BASE_URL=https://www.datos.gov.co/resource/jbjy-vk9h.json
 CORS_ORIGINS=http://localhost:3000,http://127.0.0.1:3000
 LOG_LEVEL=INFO
+
+# Motor de Análisis IA
+GEMINI_API_KEY=tu_api_key_de_gemini_aqui
+RUTA_ARTEFACTOS=artefactos
 ```
 
 5. **Ejecutar el servidor**
@@ -153,6 +157,8 @@ En el Dashboard de Render, ve a **Environment** y agrega estas variables:
 | `CORS_ORIGINS` | `https://www.radarcol.com,https://radarcol.com` | Dominios permitidos para CORS (separados por comas, sin espacios) |
 | `BASE_URL` | `https://www.datos.gov.co/resource/jbjy-vk9h.json` | URL de la API de datos.gov.co |
 | `LOG_LEVEL` | `INFO` | Nivel de logging |
+| `GEMINI_API_KEY` | `tu_api_key_aqui` | API Key de Google Gemini para IA generativa |
+| `RUTA_ARTEFACTOS` | `artefactos` | Ruta a los artefactos del modelo ML |
 | `PORT` | (automático en Render) | Puerto asignado por Render |
 
 ### 🔧 Configuración CORS en Producción

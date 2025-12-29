@@ -37,6 +37,17 @@ app = FastAPI(
     terms_of_service=API_TERMS_OF_SERVICE,
     contact=API_CONTACT,
     license_info=API_LICENSE_INFO,
+    # Habilitar respuestas JSON más legibles en desarrollo
+    openapi_tags=[
+        {
+            "name": "Health",
+            "description": "Endpoints de salud y estado del sistema"
+        },
+        {
+            "name": "Análisis de Contratos",
+            "description": "Endpoints para consulta y análisis de contratos gubernamentales"
+        }
+    ]
 )
 
 # =====================================
