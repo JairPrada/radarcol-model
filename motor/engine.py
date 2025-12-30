@@ -8,8 +8,11 @@ import time
 import os
 
 class RadarColInferencia:
-    def __init__(self, api_key_gemini=None, ruta_artefactos="artefactos"):
-        print(f"⚙️ Inicializando Motor RadarCol (V2.5 + Datos Gráficos)...")
+    def __init__(self, api_key_gemini=None, ruta_artefactos="data/artefactos"):
+        try:
+            print(f"Inicializando Motor RadarCol (V2.5 + Datos Graficos)...")
+        except:
+            print("Inicializando Motor RadarCol...")
         
         # 1. Configurar Cliente Gemini
         self.usar_llm = False
@@ -22,9 +25,9 @@ class RadarColInferencia:
             else:
                 self.client = genai.Client()
             self.usar_llm = True
-            print(f"   ✨ Cliente GenAI conectado ({self.model_name}).")
+            print(f"   [OK] Cliente GenAI conectado ({self.model_name}).")
         except Exception as e:
-            print(f"   ⚠️ Error inicializando cliente GenAI: {e}")
+            print(f"   [WARN] Error inicializando cliente GenAI: {e}")
 
         # 2. Cargar Artefactos
         try:
@@ -37,7 +40,7 @@ class RadarColInferencia:
                 self.usar_shap = True
             except:
                 self.usar_shap = False
-            print("   ✅ Cerebros matemáticos cargados.")
+            print("   [OK] Cerebros matematicos cargados.")
         except:
             self.iso_forest = None
             self.stats_entidades = {}

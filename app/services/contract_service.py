@@ -2,7 +2,9 @@
 Servicio de contratos - Lógica de negocio para gestión de contratos.
 """
 import requests
-import randomimport loggingfrom typing import List, Dict, Any, Optional
+import random
+import logging
+from typing import List, Dict, Any, Optional
 from datetime import datetime
 from fastapi import HTTPException
 
@@ -319,6 +321,14 @@ class ContractService:
             # Ejecutar análisis con el motor
             logger.info("🧠 Ejecutando análisis con motor RadarColInferencia...")
             resultado_analisis = motor.analizar_contrato(datos_motor)
+            
+            # LOGUEAR RESPUESTA COMPLETA DEL MOTOR
+            logger.info("="*80)
+            logger.info("📋 RESPUESTA COMPLETA DEL MOTOR:")
+            logger.info("="*80)
+            import json
+            logger.info(json.dumps(resultado_analisis, indent=2, ensure_ascii=False))
+            logger.info("="*80)
             
             # Log del resultado completo
             logger.info("✅ Análisis completado. Procesando resultados...")
