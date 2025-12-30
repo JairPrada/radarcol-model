@@ -36,18 +36,44 @@ backend/
 ├── app/                          # Paquete principal de la aplicación
 │   ├── __init__.py
 │   ├── main.py                   # Punto de entrada FastAPI
+│   ├── core/                     # Motor de análisis ML/IA
+│   │   ├── __init__.py
+│   │   └── analyzer.py          # RadarColInferencia (ML + LLM)
 │   ├── config/                   # Configuraciones
 │   │   ├── __init__.py
 │   │   └── settings.py          # Variables de entorno y configuración
 │   ├── constants/               # Constantes y documentación
 │   │   ├── __init__.py
-│   │   └── documentation.py     # Textos de documentación de la API
+│   │   └── api_docs.py          # Textos de documentación de la API
 │   ├── models/                  # Modelos Pydantic
 │   │   ├── __init__.py
 │   │   └── schemas.py           # DTOs y modelos de datos
 │   ├── middlewares/             # Middlewares personalizados
 │   │   ├── __init__.py
 │   │   └── logging.py           # Middleware de logging
+│   ├── controllers/             # Controladores/Routers
+│   │   ├── __init__.py
+│   │   ├── contract_controller.py
+│   │   └── health_controller.py
+│   ├── services/                # Lógica de negocio
+│   │   ├── __init__.py
+│   │   └── contract_service.py
+│   └── utils/                   # Utilidades
+│       ├── __init__.py
+│       └── text_formatter.py
+├── data/
+│   └── artifacts/               # Artefactos ML pre-entrenados
+│       ├── modelo_isoforest.pkl
+│       ├── centroide_semantico.npy
+│       ├── stats_entidades.json
+│       └── shap_explainer.pkl
+├── main.py                      # Entry point para deployment
+├── requirements.txt             # Dependencias Python
+├── render.yaml                  # Configuración Render
+├── Procfile                     # Comando de inicio
+├── .env.example                 # Template de variables de entorno
+├── DOCUMENTATION.md             # Documentación técnica completa
+└── README.md                    # Este archivo
 │   ├── services/                # Lógica de negocio
 │   │   ├── __init__.py
 │   │   └── contract_service.py  # Servicio de contratos
@@ -132,13 +158,17 @@ LOG_LEVEL=INFO
 # Obtén tu API key en: https://console.groq.com/keys
 # Free tier: 30 req/min, 14,400 req/día
 GROQ_API_KEY=tu_api_key_de_groq_aqui
-RUTA_ARTEFACTOS=artefactos
+RUTA_ARTEFACTOS=data/artifacts
 ```
 
 5. **Ejecutar el servidor**
 
 ```bash
+# Opción 1: Usando app.main (desarrollo)
 uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+
+# Opción 2: Usando main.py (como en producción)
+uvicorn main:app --host 0.0.0.0 --port 8000
 ```
 
 6. **Acceder a la documentación**
@@ -211,8 +241,9 @@ En el Blueprint screen, agrega:
    - **Environment**: `Python 3`
    - **Region**: `Oregon` (más cercano a Colombia)
    - **Branch**: `main`
-   - **Build Command**: `pip install -r requirements.txt`
-   - **Start Command**: `uvicorn app.main:app --host 0.0.0.0 --port $PORT`
+   - **Build Command**: `pip install --upgrade pip && pip install -r requirements.txt`
+   - **Start Command**: `uvicorn main:app --host 0.0.0.0 --port $PORT`
+   - **Health Check Path**: `/health`
 
 3. **Variables de Entorno** (⚠️ MUY IMPORTANTE)
 
@@ -223,7 +254,7 @@ En el Dashboard de Render, ve a **Environment** y agrega estas variables:
 | `GROQ_API_KEY` | `tu_api_key_aqui` | API Key de Groq (obtener en console.groq.com) |
 | `CORS_ORIGINS` | `https://www.radarcol.com,https://radarcol.com` | Dominios permitidos para CORS (sin espacios) |
 | `BASE_URL` | `https://www.datos.gov.co/resource/jbjy-vk9h.json` | URL de la API de datos.gov.co |
-| `RUTA_ARTEFACTOS` | `artefactos` | Ruta a los artefactos del modelo ML |
+| `RUTA_ARTEFACTOS` | `data/artifacts` | Ruta a los artefactos del modelo ML |
 | `LOG_LEVEL` | `INFO` | Nivel de logging |
 
 ### ✅ Verificar el Despliegue
@@ -334,7 +365,54 @@ Si experimentas errores de CORS en producción:
    - ❌ Falta www o sin www: Solo incluir uno
    - ✅ Ambos incluidos: `https://www.radarcol.com,https://radarcol.com`
 
-## 📚 API Endpoints
+## � Solución de Problemas
+
+### Error: "Could not import module 'main'"
+
+Si Render muestra este error, verifica:
+
+1. **Archivo main.py en la raíz**: El proyecto incluye un `main.py` en la raíz que importa desde `app.main`
+   ```python
+   from app.main import app
+   __all__ = ["app"]
+   ```
+
+2. **Comando de inicio correcto**: Debe ser `uvicorn main:app` (no `uvicorn app.main:app`)
+
+3. **Archivos de configuración presentes**:
+   - `render.yaml`: Define el comando de inicio automáticamente
+   - `Procfile`: Alternativa para el comando de inicio
+   - `main.py`: Entry point en la raíz del proyecto
+
+### Error: "Module 'numpy' has no attribute..."
+
+Incompatibilidad de versiones. Solución:
+
+```bash
+pip install --upgrade numpy pandas scikit-learn
+```
+
+### Servicio se duerme (Free Tier)
+
+El servicio Render Free se duerme tras 15 minutos de inactividad:
+
+- ✅ **Normal**: El primer request tarda ~30 segundos
+- 💡 **Solución**: Implementar un cron job que haga ping cada 10 minutos
+- 🔄 **O**: Actualizar a plan pagado ($7/mes) para mantenerlo activo 24/7
+
+### CORS Errors en Producción
+
+Verifica en Render Dashboard → Environment:
+
+```bash
+CORS_ORIGINS=https://tu-dominio.com,https://www.tu-dominio.com
+```
+
+- ✅ Sin espacios después de comas
+- ✅ HTTPS en producción
+- ✅ Incluir tanto www como sin www
+
+## �📚 API Endpoints
 
 ### GET `/`
 
