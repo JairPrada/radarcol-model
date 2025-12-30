@@ -8,31 +8,25 @@ import time
 import os
 
 class RadarColInferencia:
-    def __init__(self, groq_api_key=None, ruta_artefactos="data/artefactos"):
-        try:
-            print(f"Inicializando Motor RadarCol (V2.5 + Datos Graficos)...")
-        except:
-            print("Inicializando Motor RadarCol...")
+    def __init__(self, groq_api_key=None, ruta_artefactos="data/artifacts"):
+        print("Inicializando Motor RadarCol...")
         
-        # 1. Configurar Cliente Groq (LLM API Gratuita)
         self.usar_llm = False
         self.client = None
-        self.model_name = "llama-3.1-8b-instant"  # Modelo rápido y eficiente para Render
+        self.model_name = "llama-3.1-8b-instant"
         
         try:
             if groq_api_key:
                 self.client = Groq(api_key=groq_api_key)
             else:
-                # Intenta usar variable de entorno GROQ_API_KEY
                 self.client = Groq(api_key=os.environ.get("GROQ_API_KEY"))
             self.usar_llm = True
-            print(f"   [OK] Cliente Groq conectado ({self.model_name}).")
-            print(f"   [INFO] Free tier: 30 req/min, 14.4k req/día")
+            print(f"   Cliente Groq conectado ({self.model_name})")
+            print(f"   Free tier: 30 req/min, 14.4k req/día")
         except Exception as e:
-            print(f"   [WARN] Error inicializando cliente Groq: {e}")
-            print(f"   [INFO] Motor continuará sin análisis LLM (solo ML)")
+            print(f"   Error inicializando Groq: {e}")
+            print(f"   Motor continuará sin LLM (solo ML)")
 
-        # 2. Cargar Artefactos
         try:
             self.iso_forest = joblib.load(f"{ruta_artefactos}/modelo_isoforest.pkl")
             self.centroide = np.load(f"{ruta_artefactos}/centroide_semantico.npy")
@@ -43,14 +37,13 @@ class RadarColInferencia:
                 self.usar_shap = True
             except:
                 self.usar_shap = False
-            print("   [OK] Cerebros matematicos cargados.")
+            print("   Artefactos cargados correctamente")
         except:
             self.iso_forest = None
             self.stats_entidades = {}
             self.usar_shap = False
             self.model_nlp = None
 
-        # 3. NLP
         try:
             self.model_nlp = SentenceTransformer('hiiamsid/sentence_similarity_spanish_es', device="cpu")
         except:
@@ -252,7 +245,7 @@ class RadarColInferencia:
                             else:
                                 recom_limpias.append(" - ".join(str(v) for v in item.values()))
                     resultado["recomendaciones"] = recom_limpias
-                
+                print(resultado)
                 return resultado
             except Exception as e:
                 print(f"   [ERROR] Error parseando respuesta LLM: {e}")

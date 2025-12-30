@@ -68,20 +68,20 @@ app.add_middleware(
 # =====================================
 if CORS_ORIGINS_ENV:
     logger.info("\n" + "="*80)
-    logger.info("🔧 CORS Origins cargados desde variable de entorno:")
+    logger.info("CORS Origins cargados desde variable de entorno:")
     for origin in ALLOWED_ORIGINS:
-        logger.info(f"   ✅ {origin}")
+        logger.info(f"   - {origin}")
     logger.info("="*80 + "\n")
 else:
     logger.info("\n" + "="*80)
-    logger.info("⚠️  CORS Origins usando valores por defecto:")
+    logger.info("CORS Origins usando valores por defecto:")
     for origin in ALLOWED_ORIGINS:
-        logger.info(f"   🔹 {origin}")
+        logger.info(f"   - {origin}")
     logger.info("="*80 + "\n")
 
-logger.info("🚀 API de Análisis de Contratos Gubernamentales iniciada")
-logger.info(f"🌐 Ambiente: {'PRODUCCION' if CORS_ORIGINS_ENV else 'DESARROLLO'}")
-logger.info(f"📊 BASE_URL: {BASE_URL}")
+logger.info("API de Análisis de Contratos Gubernamentales iniciada")
+logger.info(f"Ambiente: {'PRODUCCION' if CORS_ORIGINS_ENV else 'DESARROLLO'}")
+logger.info(f"BASE_URL: {BASE_URL}")
 
 # =====================================
 # Registro de Routers

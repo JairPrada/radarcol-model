@@ -24,7 +24,7 @@ BASE_URL = os.getenv("BASE_URL", "https://www.datos.gov.co/resource/jbjy-vk9h.js
 # API Key para Groq (LLM gratuito - https://console.groq.com/keys)
 # Free tier: 30 requests/minuto, 14,400 requests/día
 GROQ_API_KEY = os.getenv("GROQ_API_KEY", None)
-RUTA_ARTEFACTOS = os.getenv("RUTA_ARTEFACTOS", "artefactos")
+RUTA_ARTEFACTOS = os.getenv("RUTA_ARTEFACTOS", "data/artifacts")
 
 # =====================================
 # Configuración CORS

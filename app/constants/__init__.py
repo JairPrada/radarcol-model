@@ -1,5 +1,5 @@
 """Archivo de inicialización del módulo constants."""
-from .documentation import (
+from .api_docs import (
     API_TITLE,
     API_VERSION,
     API_DESCRIPTION,

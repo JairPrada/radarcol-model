@@ -23,26 +23,26 @@ class LoggingMiddleware(BaseHTTPMiddleware):
         """
         # Log información de la petición entrante
         logger.info("=" * 80)
-        logger.info("📥 Petición entrante:")
-        logger.info(f"   • Método: {request.method}")
-        logger.info(f"   • Path: {request.url.path}")
-        logger.info(f"   • Origin: {request.headers.get('origin', 'No especificado')}")
-        logger.info(f"   • Host: {request.headers.get('host', 'No especificado')}")
-        logger.info(f"   • User-Agent: {request.headers.get('user-agent', 'No especificado')}")
+        logger.info("REQUEST:")
+        logger.info(f"   Method: {request.method}")
+        logger.info(f"   Path: {request.url.path}")
+        logger.info(f"   Origin: {request.headers.get('origin', 'No especificado')}")
+        logger.info(f"   Host: {request.headers.get('host', 'No especificado')}")
+        logger.info(f"   User-Agent: {request.headers.get('user-agent', 'No especificado')}")
         
         # Log headers CORS específicos (si existen)
         if request.method == "OPTIONS":
-            logger.info("   🔹 Petición CORS preflight detectada")
-            logger.info(f"   • Access-Control-Request-Method: {request.headers.get('access-control-request-method', 'N/A')}")
-            logger.info(f"   • Access-Control-Request-Headers: {request.headers.get('access-control-request-headers', 'N/A')}")
+            logger.info("   CORS preflight detectada")
+            logger.info(f"   Access-Control-Request-Method: {request.headers.get('access-control-request-method', 'N/A')}")
+            logger.info(f"   Access-Control-Request-Headers: {request.headers.get('access-control-request-headers', 'N/A')}")
         
         # Procesar la petición
         response = await call_next(request)
         
         # Log respuesta
-        logger.info("📤 Respuesta enviada:")
-        logger.info(f"   • Status: {response.status_code}")
-        logger.info(f"   • Access-Control-Allow-Origin: {response.headers.get('access-control-allow-origin', 'No configurado')}")
+        logger.info("RESPONSE:")
+        logger.info(f"   Status: {response.status_code}")
+        logger.info(f"   Access-Control-Allow-Origin: {response.headers.get('access-control-allow-origin', 'No configurado')}")
         logger.info("=" * 80 + "\n")
         
         return response

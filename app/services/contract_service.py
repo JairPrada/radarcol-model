@@ -19,7 +19,7 @@ from app.models import (
     AnalysisModel
 )
 from app.utils import estandarizar_texto
-from motor.engine import RadarColInferencia
+from app.core import RadarColInferencia
 
 
 # Configurar logger
@@ -39,14 +39,14 @@ class ContractService:
             RadarColInferencia: Instancia del motor de análisis
         """
         if cls._motor_analisis is None:
-            logger.info("🚀 Inicializando motor RadarColInferencia por primera vez...")
-            logger.info(f"   📁 Ruta artefactos: {RUTA_ARTEFACTOS}")
-            logger.info(f"   🔑 Groq API Key configurada: {'Sí' if GROQ_API_KEY else 'No (solo ML)'}")
+            logger.info("Inicializando motor RadarColInferencia...")
+            logger.info(f"   Ruta artefactos: {RUTA_ARTEFACTOS}")
+            logger.info(f"   Groq API Key configurada: {'Sí' if GROQ_API_KEY else 'No (solo ML)'}")
             cls._motor_analisis = RadarColInferencia(
                 groq_api_key=GROQ_API_KEY,
                 ruta_artefactos=RUTA_ARTEFACTOS
             )
-            logger.info("✅ Motor inicializado correctamente")
+            logger.info("Motor inicializado correctamente")
         return cls._motor_analisis
     
     @staticmethod
@@ -81,7 +81,7 @@ class ContractService:
             "Indice Dependencia": 0.0  # Valor por defecto, puede calcularse con datos históricos
         }
         
-        logger.debug(f"📋 Datos preparados para el motor:")
+        logger.debug(f"Datos preparados para el motor:")
         logger.debug(f"   💰 Valor: ${datos_motor['Valor del Contrato']:,.0f}")
         logger.debug(f"   📅 Fecha: {anio_firma}-{mes_firma:02d}")
         logger.debug(f"   ⏱️  Duración: {datos_motor['Duracion Dias']} días")
@@ -307,7 +307,7 @@ class ContractService:
         # ANÁLISIS REAL CON MOTOR DE IA
         # ============================================
         logger.info(f"\n{'='*80}")
-        logger.info(f"🔍 INICIANDO ANÁLISIS DE CONTRATO: {contract_id}")
+        logger.info(f"INICIANDO ANÁLISIS DE CONTRATO: {contract_id}")
         logger.info(f"{'='*80}")
         
         try:
@@ -324,14 +324,14 @@ class ContractService:
             
             # LOGUEAR RESPUESTA COMPLETA DEL MOTOR
             logger.info("="*80)
-            logger.info("📋 RESPUESTA COMPLETA DEL MOTOR:")
+            logger.info("RESPUESTA COMPLETA DEL MOTOR:")
             logger.info("="*80)
             import json
             logger.info(json.dumps(resultado_analisis, indent=2, ensure_ascii=False))
             logger.info("="*80)
             
             # Log del resultado completo
-            logger.info("✅ Análisis completado. Procesando resultados...")
+            logger.info("Análisis completado. Procesando resultados...")
             logger.debug(f"📦 Claves en resultado: {list(resultado_analisis.keys())}")
             
             # Extraer resultados
@@ -339,28 +339,28 @@ class ContractService:
             anomalia = resultado_analisis["Meta_Data"]["Score"] * 100  # Convertir a porcentaje
             nivel_riesgo = cls._mapear_nivel_riesgo(nivel_riesgo_str)
             
-            logger.info(f"🎯 Nivel de Riesgo Detectado: {nivel_riesgo_str} ({anomalia:.1f}%)")
+            logger.info(f"Nivel de Riesgo Detectado: {nivel_riesgo_str} ({anomalia:.1f}%)")
             
             resumen_ejecutivo = resultado_analisis.get("Resumen_Ejecutivo", "Análisis completado")
             factores_principales = resultado_analisis.get("Factores_Principales", [])
             recomendaciones = resultado_analisis.get("Recomendaciones_Auditor", [])
             detalle_shap = resultado_analisis.get("Detalle_SHAP", [])
             
-            logger.info(f"📈 Factores principales encontrados: {len(factores_principales)}")
-            logger.info(f"💡 Recomendaciones generadas: {len(recomendaciones)}")
-            logger.info(f"📊 Valores SHAP disponibles: {len(detalle_shap)}")
+            logger.info(f"Factores principales encontrados: {len(factores_principales)}")
+            logger.info(f"Recomendaciones generadas: {len(recomendaciones)}")
+            logger.info(f"Valores SHAP disponibles: {len(detalle_shap)}")
             
             if detalle_shap:
-                logger.debug("🔍 Detalle SHAP:")
+                logger.debug("Detalle SHAP:")
                 for item in detalle_shap[:3]:  # Mostrar solo los primeros 3
                     logger.debug(f"   • {item.get('variable', 'N/A')}: {item.get('peso', 0):.4f}")
             
         except Exception as e:
             # Fallback en caso de error del motor
-            logger.error(f"❌ ERROR en motor de análisis: {type(e).__name__}")
+            logger.error(f"ERROR en motor de análisis: {type(e).__name__}")
             logger.error(f"   Mensaje: {str(e)}")
             logger.error(f"   Contrato ID: {contract_id}")
-            logger.warning("⚠️  Activando modo de contingencia con valores por defecto")
+            logger.warning("Activando modo de contingencia con valores por defecto")
             
             nivel_riesgo = NivelRiesgo.MEDIO
             anomalia = 50.0
@@ -387,11 +387,11 @@ class ContractService:
         logger.info(f"✅ SHAP values construidos: {len(shap_values)} variables")
         
         if shap_values:
-            logger.debug("📊 Variables SHAP principales:")
+            logger.debug("Variables SHAP principales:")
             for sv in shap_values[:3]:
                 logger.debug(f"   • {sv.variable}: {sv.value} ({sv.description})")
         else:
-            logger.warning("⚠️  No se generaron valores SHAP")
+            logger.warning("No se generaron valores SHAP")
         
         # Análisis con datos reales del motor
         analysis_data = AnalysisModel(
@@ -406,11 +406,11 @@ class ContractService:
         )
         
         logger.info(f"\n{'='*80}")
-        logger.info(f"✅ ANÁLISIS COMPLETADO EXITOSAMENTE")
-        logger.info(f"   📝 Contrato: {contract_id}")
-        logger.info(f"   ⚠️  Nivel Riesgo: {nivel_riesgo.value}")
-        logger.info(f"   📊 Anomalía: {anomalia:.1f}%")
-        logger.info(f"   🔢 SHAP Values: {len(shap_values)}")
+        logger.info(f"ANÁLISIS COMPLETADO EXITOSAMENTE")
+        logger.info(f"   Contrato: {contract_id}")
+        logger.info(f"   Nivel Riesgo: {nivel_riesgo.value}")
+        logger.info(f"   Anomalía: {anomalia:.1f}%")
+        logger.info(f"   SHAP Values: {len(shap_values)}")
         logger.info(f"{'='*80}\n")
         
         return contract_data, analysis_data
