@@ -8,7 +8,7 @@ from typing import List, Dict, Any, Optional
 from datetime import datetime
 from fastapi import HTTPException
 
-from app.config import BASE_URL, GEMINI_API_KEY, RUTA_ARTEFACTOS
+from app.config import BASE_URL, GROQ_API_KEY, RUTA_ARTEFACTOS
 from app.models import (
     NivelRiesgo,
     MetadataModel,
@@ -41,9 +41,9 @@ class ContractService:
         if cls._motor_analisis is None:
             logger.info("🚀 Inicializando motor RadarColInferencia por primera vez...")
             logger.info(f"   📁 Ruta artefactos: {RUTA_ARTEFACTOS}")
-            logger.info(f"   🔑 API Key configurada: {'Sí' if GEMINI_API_KEY else 'No'}")
+            logger.info(f"   🔑 Groq API Key configurada: {'Sí' if GROQ_API_KEY else 'No (solo ML)'}")
             cls._motor_analisis = RadarColInferencia(
-                api_key_gemini=GEMINI_API_KEY,
+                groq_api_key=GROQ_API_KEY,
                 ruta_artefactos=RUTA_ARTEFACTOS
             )
             logger.info("✅ Motor inicializado correctamente")

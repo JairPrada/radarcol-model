@@ -6,7 +6,7 @@ from .settings import (
     CORS_ORIGINS_ENV,
     ALLOWED_ORIGINS,
     LOG_LEVEL,
-    GEMINI_API_KEY,
+    GROQ_API_KEY,
     RUTA_ARTEFACTOS
 )
 
@@ -17,6 +17,6 @@ __all__ = [
     "CORS_ORIGINS_ENV",
     "ALLOWED_ORIGINS",
     "LOG_LEVEL",
-    "GEMINI_API_KEY",
+    "GROQ_API_KEY",
     "RUTA_ARTEFACTOS"
 ]

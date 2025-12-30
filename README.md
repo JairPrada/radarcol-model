@@ -6,18 +6,28 @@ API FastAPI para el análisis y consulta de contratos del sector público colomb
 
 - ✅ **Consulta de contratos**: Información detallada de contratos gubernamentales
 - 🔍 **Filtrado avanzado**: Por fecha, valor, entidad e ID
-- 📊 **Análisis de riesgo**: Evaluación de niveles de riesgo y anomalías
+- 📊 **Análisis de riesgo**: Evaluación de niveles de riesgo y anomalías con ML
+- 🤖 **IA Generativa**: Análisis profundo con Groq API (LLaMA 3.1 8B)
 - 📈 **Métricas agregadas**: Estadísticas y análisis de alto nivel
 - 🔐 **CORS configurado**: Soporte para múltiples orígenes
 - 📝 **Logging completo**: Debugging detallado para producción
+- ☁️  **Cloud-ready**: Optimizado para Render free tier
 
 ## 🛠️ Tecnologías
 
+### Backend & API
 - **FastAPI** 0.125.0 - Framework web moderno y rápido
 - **Uvicorn** 0.38.0 - Servidor ASGI de alto rendimiento
 - **Pydantic** 2.12.3 - Validación de datos con tipos
 - **Python-dotenv** 1.0.0 - Gestión de variables de entorno
 - **Requests** 2.32.3 - Cliente HTTP
+
+### Motor de Análisis ML + IA
+- **Groq API** 0.13.0 - LLM API ultra-rápida (LLaMA 3.1 8B Instant)
+- **scikit-learn** 1.3.0 - IsolationForest para detección de anomalías
+- **sentence-transformers** 2.2.2 - Embeddings semánticos en español
+- **joblib** 1.3.2 - Serialización de modelos
+- **numpy** & **pandas** - Procesamiento de datos
 
 ## 📁 Estructura del Proyecto
 
@@ -118,8 +128,10 @@ BASE_URL=https://www.datos.gov.co/resource/jbjy-vk9h.json
 CORS_ORIGINS=http://localhost:3000,http://127.0.0.1:3000
 LOG_LEVEL=INFO
 
-# Motor de Análisis IA
-GEMINI_API_KEY=tu_api_key_de_gemini_aqui
+# Motor de Análisis IA con Groq (Gratuito)
+# Obtén tu API key en: https://console.groq.com/keys
+# Free tier: 30 req/min, 14,400 req/día
+GROQ_API_KEY=tu_api_key_de_groq_aqui
 RUTA_ARTEFACTOS=artefactos
 ```
 
@@ -134,17 +146,71 @@ uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 - **Swagger UI**: http://localhost:8000/docs
 - **ReDoc**: http://localhost:8000/redoc
 
-## 🌐 Despliegue en Render
+## 🌐 Despliegue en Render (Free Tier)
 
-### Configuración en Dashboard de Render
+### 🚀 Opción 1: Despliegue Automático con render.yaml
+
+El proyecto incluye un archivo `render.yaml` para despliegue automático.
+
+**Pasos:**
+
+1. **Obtén tu API Key de Groq (GRATIS)**
+   - Ve a https://console.groq.com/keys
+   - Crea una cuenta gratuita
+   - Genera un nuevo API key
+   - **Free tier**: 30 requests/minuto, 14,400 requests/día
+
+2. **Sube el código a GitHub**
+   ```bash
+   git add .
+   git commit -m "Ready for Render deployment"
+   git push origin main
+   ```
+
+3. **Verifica que todo esté listo**
+   ```bash
+   python verify_deployment.py
+   ```
+   
+   Este script verifica:
+   - ✅ Todos los archivos necesarios existen
+   - ✅ requirements.txt tiene las dependencias correctas
+   - ✅ Artefactos no son muy pesados (<100MB)
+   - ✅ .env.example está configurado
+
+4. **Crea el servicio en Render**
+   - Ve a https://dashboard.render.com
+   - Haz clic en **"New +"** → **"Blueprint"**
+   - Conecta tu repositorio de GitHub
+   - Render detectará automáticamente el `render.yaml`
+   - **Antes de deployar**, configura las variables de entorno:
+
+5. **Configurar Variables de Entorno** (⚠️ IMPORTANTE)
+
+En el Blueprint screen, agrega:
+
+| Variable | Valor | ¿Secreto? |
+|----------|-------|-----------|
+| `GROQ_API_KEY` | `tu_api_key_de_groq` | ✅ Sí |
+| `CORS_ORIGINS` | `https://tu-frontend.vercel.app,http://localhost:3000` | No |
+| `BASE_URL` | `https://www.datos.gov.co/resource/jbjy-vk9h.json` | No |
+
+6. **Deploy**
+   - Haz clic en **"Apply"**
+   - Render creará y desplegará tu servicio automáticamente
+   - El despliegue toma ~5-10 minutos
+
+### 🔧 Opción 2: Despliegue Manual
 
 1. **Crear nuevo Web Service**
    - Conecta tu repositorio de GitHub
-   - Selecciona el repositorio `radarcol-model`
+   - Selecciona el repositorio
 
 2. **Configuración del servicio**
    - **Name**: `radarcol-api` (o el nombre que prefieras)
    - **Environment**: `Python 3`
+   - **Region**: `Oregon` (más cercano a Colombia)
+   - **Branch**: `main`
    - **Build Command**: `pip install -r requirements.txt`
    - **Start Command**: `uvicorn app.main:app --host 0.0.0.0 --port $PORT`
 
@@ -154,12 +220,48 @@ En el Dashboard de Render, ve a **Environment** y agrega estas variables:
 
 | Variable | Valor | Descripción |
 |----------|-------|-------------|
-| `CORS_ORIGINS` | `https://www.radarcol.com,https://radarcol.com` | Dominios permitidos para CORS (separados por comas, sin espacios) |
+| `GROQ_API_KEY` | `tu_api_key_aqui` | API Key de Groq (obtener en console.groq.com) |
+| `CORS_ORIGINS` | `https://www.radarcol.com,https://radarcol.com` | Dominios permitidos para CORS (sin espacios) |
 | `BASE_URL` | `https://www.datos.gov.co/resource/jbjy-vk9h.json` | URL de la API de datos.gov.co |
-| `LOG_LEVEL` | `INFO` | Nivel de logging |
-| `GEMINI_API_KEY` | `tu_api_key_aqui` | API Key de Google Gemini para IA generativa |
 | `RUTA_ARTEFACTOS` | `artefactos` | Ruta a los artefactos del modelo ML |
-| `PORT` | (automático en Render) | Puerto asignado por Render |
+| `LOG_LEVEL` | `INFO` | Nivel de logging |
+
+### ✅ Verificar el Despliegue
+
+Una vez desplegado:
+
+```bash
+# Health check
+curl https://tu-app.onrender.com/health
+
+# Probar endpoint de contratos
+curl https://tu-app.onrender.com/contratos?limit=5
+```
+
+### 💡 Consideraciones para Free Tier de Render
+
+**Recursos disponibles:**
+- ✅ 512MB RAM (suficiente para la API + modelos ML)
+- ✅ CPU compartida (sin GPU, no necesaria con Groq API)
+- ✅ 750 horas/mes de actividad
+- ⚠️ El servicio se duerme después de 15 min de inactividad
+- ⚠️ Primer request después de dormirse toma ~30 segundos
+
+**Optimizaciones aplicadas:**
+- Motor ML cargado en memoria (singleton pattern)
+- Modelos pequeños y eficientes
+- LLM inference via Groq API (no local)
+- Artefactos comprimidos (<100MB)
+
+### 🧠 ¿Por qué Groq en lugar de LLM local?
+
+El proyecto usa **Groq API** en lugar de correr un LLM localmente porque:
+
+1. **Render Free Tier no tiene GPU** - Imposible correr LLMs locales eficientemente
+2. **512MB RAM limitados** - Incluso modelos pequeños (3-7B) necesitan 2-3GB mínimo
+3. **Groq es gratuito** - 14,400 requests/día sin costo
+4. **Ultra-baja latencia** - ~500 tokens/seg, más rápido que GPT-4
+5. **Modelos potentes** - LLaMA 3.1 8B es superior a modelos locales pequeños
 
 ### 🔧 Configuración CORS en Producción
 
