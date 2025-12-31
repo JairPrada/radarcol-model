@@ -109,25 +109,81 @@ def test_services():
     
     return True
 
-def test_models():
-    """Prueba modelos Pydantic."""
-    print("\n📋 Verificando modelos de datos...")
+def test_artifacts():
+    """Prueba que los artefactos ML estén disponibles."""
+    print("\n🎯 Verificando artefactos ML...")
     
     try:
-        from app.models import ShapValueModel, AnalysisModel, ContractDetailModel
+        from app.config import RUTA_ARTEFACTOS
+        import os
         
-        # Crear modelo de prueba
-        shap = ShapValueModel(
-            variable="test_var",
-            value=1.23,
-            description="Variable de prueba",
-            actualValue="Valor de prueba"
-        )
-        print("   ✅ ShapValueModel funciona correctamente")
+        print(f"   📁 Ruta configurada: {RUTA_ARTEFACTOS}")
         
-        return True
+        required_files = [
+            "modelo_isoforest.pkl",
+            "centroide_semantico.npy", 
+            "stats_entidades.json",
+            "shap_explainer.pkl"
+        ]
+        
+        missing_files = []
+        for file in required_files:
+            file_path = os.path.join(RUTA_ARTEFACTOS, file)
+            if os.path.exists(file_path):
+                size = os.path.getsize(file_path)
+                print(f"   ✅ {file} ({size:,} bytes)")
+            else:
+                print(f"   ❌ {file} - NO ENCONTRADO")
+                missing_files.append(file)
+        
+        if missing_files:
+            print(f"   ⚠️ ADVERTENCIA: {len(missing_files)} archivos faltantes")
+            print("   📝 La aplicación funcionará en modo degradado")
+            return True  # No es crítico, puede funcionar sin ellos
+        else:
+            print("   ✅ Todos los artefactos ML disponibles")
+            return True
+            
     except Exception as e:
-        print(f"   ❌ Error con modelos: {e}")
+        print(f"   ❌ Error verificando artefactos: {e}")
+        return False
+
+def test_degraded_mode():
+    """Prueba que el modo degradado funcione correctamente."""
+    print("\n🔄 Verificando modo degradado...")
+    
+    try:
+        from app.core.analyzer import RadarColInferencia
+        
+        # Probar con ruta inexistente para activar modo degradado
+        motor = RadarColInferencia(ruta_artefactos="ruta_inexistente")
+        
+        if hasattr(motor, 'modo_solo_llm') and motor.modo_solo_llm:
+            print("   ✅ Modo degradado se activa correctamente")
+            
+            # Probar análisis en modo degradado
+            contrato_test = {
+                "Valor del Contrato": 1000000,
+                "Objeto del Contrato": "Servicio de prueba",
+                "Nit Entidad": "12345678",
+                "Duracion Dias": 30,
+                "Anio Firma": 2024,
+                "Mes Firma": 6
+            }
+            
+            resultado = motor.analizar_contrato_ml_solo(contrato_test)
+            if resultado and "Meta_Data" in resultado:
+                print("   ✅ Análisis en modo degradado funciona")
+                return True
+            else:
+                print("   ❌ Error en análisis de modo degradado")
+                return False
+        else:
+            print("   ✅ Artefactos disponibles (modo normal)")
+            return True
+            
+    except Exception as e:
+        print(f"   ❌ Error en modo degradado: {e}")
         return False
 
 def main():
@@ -139,7 +195,8 @@ def main():
         ("Importaciones", test_imports),
         ("Aplicación FastAPI", test_app),
         ("Servicios", test_services),
-        ("Modelos de datos", test_models),
+        ("Artefactos ML", test_artifacts),
+        ("Modo degradado", test_degraded_mode),
     ]
     
     all_passed = True

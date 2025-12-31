@@ -1,0 +1,11 @@
+# Archivos que deben incluirse en el despliegue
+# Este archivo asegura que los artefactos ML no sean ignorados
+
+# Mantener estructura de directorio data/artifacts/
+include data/
+include data/artifacts/
+include data/artifacts/*.pkl
+include data/artifacts/*.npy  
+include data/artifacts/*.json
+include data/migrations/
+include data/migrations/*.sql

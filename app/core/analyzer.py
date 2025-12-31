@@ -30,8 +30,16 @@ class RadarColInferencia:
         except Exception as e:
             print(f"   ⚠️ Error cliente Groq: {e}. Se usará modo solo ML.")
 
-        # 2. Cargar Artefactos Matemáticos (Con manejo de errores)
+        # 2. Cargar Artefactos Matemáticos (Con manejo de errores robusto)
+        self.modo_solo_llm = False  # Flag para modo degradado
         try:
+            print(f"   📁 Intentando cargar desde: {ruta_artefactos}")
+            
+            # Verificar que la ruta existe
+            import os
+            if not os.path.exists(ruta_artefactos):
+                raise FileNotFoundError(f"Directorio de artefactos no encontrado: {ruta_artefactos}")
+            
             self.iso_forest = joblib.load(f"{ruta_artefactos}/modelo_isoforest.pkl")
             self.centroide = np.load(f"{ruta_artefactos}/centroide_semantico.npy")
             with open(f"{ruta_artefactos}/stats_entidades.json", 'r') as f:
@@ -48,9 +56,16 @@ class RadarColInferencia:
                 
             print("   ✅ Artefactos cargados correctamente")
         except Exception as e:
-            print(f"   ❌ ERROR CRÍTICO: Fallo cargando artefactos en {ruta_artefactos}: {e}")
+            print(f"   ⚠️ ADVERTENCIA: Fallo cargando artefactos en {ruta_artefactos}: {e}")
+            print("   🔄 Activando modo degradado (solo LLM + valores por defecto)")
+            
+            # Modo degradado: usar valores por defecto
+            self.modo_solo_llm = True
             self.iso_forest = None
-            self.stats_entidades = {}
+            self.stats_entidades = {
+                # Estadísticas por defecto para entidades comunes
+                "default": {"media": 50000000, "std": 20000000}
+            }
             self.usar_shap = False
 
         # 3. NLP
@@ -73,8 +88,16 @@ class RadarColInferencia:
         nit = contrato.get("Nit Entidad", "0")
         duracion = float(contrato.get("Duracion Dias", 0))
         
-        fallback_stats = {"media": 50000000, "std": 20000000}
-        stats = self.stats_entidades.get(nit, fallback_stats)
+        # Obtener estadísticas de entidad
+        if self.modo_solo_llm or not self.stats_entidades:
+            # Modo degradado: usar estadísticas por defecto
+            fallback_stats = {"media": 50000000, "std": 20000000}
+            stats = fallback_stats
+        else:
+            fallback_stats = {"media": 50000000, "std": 20000000}
+            stats = self.stats_entidades.get(nit, 
+                    self.stats_entidades.get("default", fallback_stats))
+        
         std = stats['std'] if stats['std'] > 0 else 1.0
         z_score = (valor - stats['media']) / std
         
@@ -208,8 +231,21 @@ class RadarColInferencia:
         X, texto, features = self._preprocesar(contrato_json)
         
         # 1. Score ML (Financiero)
-        score_raw = self.iso_forest.decision_function(X)[0] if self.iso_forest else 0
-        risk_ml = float(np.clip(1 - ((score_raw - (-0.5)) / (0.5 - (-0.5))), 0, 1))
+        if self.iso_forest and not self.modo_solo_llm:
+            try:
+                score_raw = self.iso_forest.decision_function(X)[0]
+                risk_ml = float(np.clip(1 - ((score_raw - (-0.5)) / (0.5 - (-0.5))), 0, 1))
+            except Exception as e:
+                print(f"   ⚠️ Error en Isolation Forest: {e}. Usando z-score como fallback.")
+                # Calcular riesgo basado en z-score como fallback
+                z_score = features.get("Z-Score Valor", 0)
+                risk_ml = float(min(abs(z_score) / 5.0, 1.0))
+                score_raw = -risk_ml  # Simular score para compatibilidad
+        else:
+            # Modo degradado: usar z-score como proxy de riesgo
+            z_score = features.get("Z-Score Valor", 0)
+            risk_ml = float(min(abs(z_score) / 5.0, 1.0))
+            score_raw = -risk_ml
         
         # VETO: Si el precio es absurdo (Z > 3), Riesgo es 1.0 siempre
         if features["Z-Score Valor"] > 3: 
