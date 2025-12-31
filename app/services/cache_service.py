@@ -7,7 +7,15 @@ import json
 import hashlib
 from datetime import datetime, timedelta
 from typing import Optional, List, Dict, Any, Tuple
-import libsql
+
+# Importación opcional de libsql
+try:
+    import libsql
+    HAS_LIBSQL = True
+except ImportError:
+    print("⚠️ libsql-experimental no está instalado. Caché deshabilitado.")
+    libsql = None
+    HAS_LIBSQL = False
 
 
 class CacheService:
@@ -30,6 +38,10 @@ class CacheService:
     def _connect(self):
         """Establece conexión con Turso usando variables de entorno."""
         try:
+            if not HAS_LIBSQL:
+                print("⚠️ libsql-experimental no disponible. Caché deshabilitado.")
+                return
+                
             url = os.getenv("TURSO_DATABASE_URL")
             auth_token = os.getenv("TURSO_AUTH_TOKEN")
             
