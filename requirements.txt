@@ -13,3 +13,6 @@ groq==0.13.0
 sentence-transformers
 scikit-learn
 shap
+
+# Base de Datos Turso (Caché)
+libsql-experimental==0.2.0

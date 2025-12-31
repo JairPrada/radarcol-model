@@ -1,6 +1,7 @@
 """
 Controllers para endpoints de contratos gubernamentales.
 """
+import logging
 from fastapi import APIRouter, Query, HTTPException
 from typing import Optional
 
@@ -8,6 +9,7 @@ from app.models import ContratosResponseModel, ContratoAnalisisResponseModel, Me
 from app.services import ContractService
 from app.constants import CONTRATOS_DESCRIPTION, ANALISIS_DESCRIPTION
 
+logger = logging.getLogger(__name__)
 router = APIRouter(tags=["Análisis de Contratos"])
 
 
@@ -19,12 +21,6 @@ router = APIRouter(tags=["Análisis de Contratos"])
     response_description="Lista de contratos con métricas agregadas y análisis de riesgo"
 )
 def obtener_contratos(
-    limit: int = Query(
-        10,
-        ge=1,
-        le=100,
-        description="Número máximo de contratos a retornar (entre 1 y 100)"
-    ),
     fecha_desde: Optional[str] = Query(
         None,
         regex=r"^\d{4}-\d{2}-\d{2}$",
@@ -61,10 +57,13 @@ def obtener_contratos(
         example="ABC-2024-001"
     )
 ):
-    """Obtiene lista de contratos con filtros opcionales.
+    """Obtiene lista de contratos con análisis rápido de muestra.
+    
+    NUEVO: Este endpoint consulta y analiza solo los primeros 50 contratos
+    más recientes que cumplan con los filtros, generando una respuesta rápida.
+    Las estadísticas se calculan sobre esta muestra de 50 contratos.
     
     Args:
-        limit: Número máximo de contratos a retornar
         fecha_desde: Fecha de inicio mínima
         fecha_hasta: Fecha de inicio máxima
         valor_minimo: Valor mínimo del contrato
@@ -73,7 +72,7 @@ def obtener_contratos(
         id_contrato: ID específico del contrato
         
     Returns:
-        ContratosResponseModel: Respuesta con métricas y lista de contratos
+        ContratosResponseModel: Respuesta con métricas de muestra y lista de 50 contratos
     """
     # Construir cláusula WHERE dinámica
     filtros = [
@@ -97,18 +96,17 @@ def obtener_contratos(
     
     where_clause = " AND ".join(filtros)
     
-    # Obtener datos del servicio
+    # Obtener datos del servicio (modo muestra rápida)
+    # Solo analiza los primeros 50 contratos que cumplan filtros
     total_contratos, monto_total, contratos_alto_riesgo, contratos_mapeados = \
-        ContractService.obtener_contratos_filtrados(limit, where_clause)
+        ContractService.obtener_contratos_filtrados(where_clause)
     
     # Construir respuesta
     return ContratosResponseModel(
         metadata=MetadataModel(
             fuenteDatos="datos.gov.co (SECOP II - Sistema Electrónico de Contratación Pública)",
             camposSimulados=[
-                "nivelRiesgo",
-                "anomalia",
-                "contratosAltoRiesgo"
+                # Todos los campos ahora usan análisis real con ML/IA
             ]
         ),
         totalContratosAnalizados=total_contratos,
@@ -134,14 +132,32 @@ def obtener_analisis_contrato(id: str):
     Returns:
         ContratoAnalisisResponseModel: Datos del contrato y análisis completo
     """
-    # Obtener datos del contrato
-    contrato = ContractService.obtener_contrato_por_id(id)
+    try:
+        # Obtener datos del contrato
+        contrato = ContractService.obtener_contrato_por_id(id)
+        
+        # Generar análisis
+        contract_data, analysis_data = ContractService.generar_analisis_contrato(id, contrato)
+        
+        # Construir respuesta
+        return ContratoAnalisisResponseModel(
+            contract=contract_data,
+            analysis=analysis_data
+        )
     
-    # Generar análisis
-    contract_data, analysis_data = ContractService.generar_analisis_contrato(id, contrato)
-    
-    # Construir respuesta
-    return ContratoAnalisisResponseModel(
-        contract=contract_data,
-        analysis=analysis_data
-    )
+    except HTTPException:
+        # Re-lanzar HTTPExceptions ya procesadas
+        raise
+        
+    except Exception as e:
+        # Capturar cualquier error no manejado
+        logger.error(f"ERROR en análisis detallado del contrato {id}: {e}")
+        logger.error(f"Tipo de error: {type(e).__name__}")
+        import traceback
+        logger.error(f"Stack trace: {traceback.format_exc()}")
+        
+        # Responder con un error estructurado en lugar de 500
+        raise HTTPException(
+            status_code=500,
+            detail=f"Error interno procesando análisis del contrato {id}: {str(e)}"
+        )

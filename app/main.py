@@ -53,15 +53,16 @@ app = FastAPI(
 # =====================================
 # Configuración de Middlewares
 # =====================================
-app.add_middleware(LoggingMiddleware)
-
+# IMPORTANTE: El orden importa - CORS debe ir ANTES que LoggingMiddleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=ALLOWED_ORIGINS,
+    allow_origins=["*"],  # Temporalmente permitir todo
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
     allow_headers=["*"],
 )
+
+app.add_middleware(LoggingMiddleware)
 
 # =====================================
 # Logging de Configuración al Inicio
