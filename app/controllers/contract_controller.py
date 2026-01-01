@@ -59,9 +59,9 @@ def obtener_contratos(
 ):
     """Obtiene lista de contratos con análisis rápido de muestra.
     
-    NUEVO: Este endpoint consulta y analiza solo los primeros 50 contratos
+    NUEVO: Este endpoint consulta y analiza solo los primeros 10 contratos
     más recientes que cumplan con los filtros, generando una respuesta rápida.
-    Las estadísticas se calculan sobre esta muestra de 50 contratos.
+    Las estadísticas se calculan sobre esta muestra de 10 contratos.
     
     Args:
         fecha_desde: Fecha de inicio mínima
@@ -72,7 +72,7 @@ def obtener_contratos(
         id_contrato: ID específico del contrato
         
     Returns:
-        ContratosResponseModel: Respuesta con métricas de muestra y lista de 50 contratos
+        ContratosResponseModel: Respuesta con métricas de muestra y lista de 10 contratos
     """
     # Construir cláusula WHERE dinámica
     filtros = [
@@ -97,7 +97,7 @@ def obtener_contratos(
     where_clause = " AND ".join(filtros)
     
     # Obtener datos del servicio (modo muestra rápida)
-    # Solo analiza los primeros 50 contratos que cumplan filtros
+    # Solo analiza los primeros 10 contratos que cumplan filtros
     total_contratos, monto_total, contratos_alto_riesgo, contratos_mapeados = \
         ContractService.obtener_contratos_filtrados(where_clause)
     

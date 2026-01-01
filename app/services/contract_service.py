@@ -220,17 +220,17 @@ class ContractService:
         cls,
         where_clause: str,
         analyze_all: bool = True,
-        return_limit: int = 50
+        return_limit: int = 10
     ) -> tuple[int, float, int, List[ContratoDetalleModel]]:
         """Obtiene contratos filtrados con análisis rápido de muestra.
         
-        NUEVO: Consulta y analiza solo los primeros 50 contratos que cumplan los filtros
+        NUEVO: Consulta y analiza solo los primeros 10 contratos que cumplan los filtros
         para generar una respuesta rápida. Las estadísticas se calculan sobre esta muestra.
         
         Args:
             where_clause: Cláusula WHERE de SoQL para filtrado
-            analyze_all: Ignorado, siempre analiza solo 50 contratos (modo muestra)
-            return_limit: Número de contratos a consultar y analizar (default: 50)
+            analyze_all: Ignorado, siempre analiza solo 10 contratos (modo muestra)
+            return_limit: Número de contratos a consultar y analizar (default: 10)
             
         Returns:
             tuple: (total_contratos_muestra, monto_total_muestra, contratos_alto_riesgo, contratos_mapeados)
@@ -258,10 +258,10 @@ class ContractService:
         print(f"🔍 Filtros aplicados: {len(filtros_combinados)} filtros de calidad + filtros usuario")
 
         # ==================== SISTEMA DE CACHÉ ====================
-        # Generar hash único de filtros para caché (incluye limit=50)
+        # Generar hash único de filtros para caché (incluye limit=10)
         filtro_hash = cache_service.generate_filter_hash({
             "where_clause": where_clause,
-            "analyze_all": False,  # Solo 50 contratos
+            "analyze_all": False,  # Solo 10 contratos
             "return_limit": return_limit,
             "sample_mode": True  # Modo muestra rápida
         })
