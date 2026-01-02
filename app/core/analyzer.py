@@ -68,13 +68,36 @@ class RadarColInferencia:
             }
             self.usar_shap = False
 
-        # 3. NLP
+        # 3. NLP - Carga condicional basada en configuración
+        self.model_nlp = None
+        
+        # Importar configuración de embeddings
         try:
-            print("   🧠 Cargando embeddings (esto toma unos segundos)...")
-            self.model_nlp = SentenceTransformer('hiiamsid/sentence_similarity_spanish_es', device="cpu")
-        except:
-            print("   ⚠️ Error NLP. La semántica será ignorada.")
-            self.model_nlp = None
+            from app.config import ENABLE_EMBEDDINGS, EMBEDDING_MODEL
+            self.enable_embeddings = ENABLE_EMBEDDINGS
+            self.embedding_model_name = EMBEDDING_MODEL
+        except ImportError:
+            # Valores por defecto si no hay configuración
+            self.enable_embeddings = False
+            self.embedding_model_name = "paraphrase-multilingual-MiniLM-L12-v2"
+        
+        if self.enable_embeddings:
+            try:
+                print(f"   🧠 Cargando embeddings: {self.embedding_model_name}")
+                print("   ⏱️  Esto puede tomar 10-30 segundos...")
+                self.model_nlp = SentenceTransformer(
+                    self.embedding_model_name, 
+                    device="cpu"
+                )
+                print(f"   ✅ Embeddings cargados correctamente")
+            except Exception as e:
+                print(f"   ⚠️ Error cargando embeddings: {e}")
+                print("   🔄 Continuando sin análisis semántico (solo ML + LLM)")
+                self.model_nlp = None
+                self.enable_embeddings = False
+        else:
+            print("   ⚙️  Embeddings deshabilitados (modo bajo consumo de memoria)")
+            print("   ℹ️  El análisis usará solo ML + LLM (sin score semántico)")
         
         self.columnas_modelo = [
             "Z-Score Valor", "Valor Logaritmo", "Costo por Caracter", 
@@ -252,12 +275,24 @@ class RadarColInferencia:
             risk_ml = 1.0
         
         # 2. Score NLP (Semántico)
-        risk_nlp = 0.5
-        if self.model_nlp:
-            emb = self.model_nlp.encode(texto[:200], convert_to_numpy=True, show_progress_bar=False, normalize_embeddings=True)
-            c = self.centroide if hasattr(self, 'centroide') else np.zeros(emb.shape)
-            dist = np.linalg.norm(emb - c) if c.size > 0 else 1.0
-            risk_nlp = float(np.clip(dist / 2.0, 0, 1))
+        # Si embeddings están deshabilitados, usar score neutral (0.0)
+        risk_nlp = 0.0
+        
+        if self.model_nlp and hasattr(self, 'centroide'):
+            try:
+                emb = self.model_nlp.encode(
+                    texto[:200], 
+                    convert_to_numpy=True, 
+                    show_progress_bar=False, 
+                    normalize_embeddings=True
+                )
+                dist = np.linalg.norm(emb - self.centroide)
+                risk_nlp = float(np.clip(dist / 2.0, 0, 1))
+            except Exception as e:
+                print(f"   ⚠️ Error calculando embeddings: {e}")
+                risk_nlp = 0.0
+        
+        # Si no hay embeddings, el análisis se basa solo en ML
         
         # 3. SHAP (explicabilidad)
         shap_values = []
@@ -269,8 +304,14 @@ class RadarColInferencia:
                               for col, val in zip(self.columnas_modelo, sv[0])]
             except: pass
         
-        # 4. Combinación final (70% ML, 30% NLP)
-        score_combinado = risk_ml * 0.7 + risk_nlp * 0.3
+        # 4. Combinación final
+        # Si embeddings están habilitados: 70% ML, 30% NLP
+        # Si embeddings deshabilitados: 100% ML (risk_nlp es 0.0)
+        if self.model_nlp:
+            score_combinado = risk_ml * 0.7 + risk_nlp * 0.3
+        else:
+            # Sin embeddings, confiar 100% en el análisis ML/financiero
+            score_combinado = risk_ml
         
         # 5. Determinar nivel de riesgo
         if score_combinado >= 0.7:

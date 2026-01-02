@@ -50,6 +50,31 @@ if not RUTA_ARTEFACTOS:
 print(f"🔍 Configuración de artefactos: {RUTA_ARTEFACTOS}")
 
 # =====================================
+# Configuración de Embeddings (NLP)
+# =====================================
+# IMPORTANTE: Los modelos de embeddings consumen mucha memoria (400-800MB)
+# Deshabilitar en ambientes con < 1GB RAM disponible (ej: free tier de hosting)
+
+# Habilitar/Deshabilitar análisis semántico con embeddings
+# False = Solo análisis ML + LLM (Bajo uso de memoria ~200MB)
+# True = Análisis completo con embeddings (Alto uso de memoria ~600-800MB)
+ENABLE_EMBEDDINGS = os.getenv("ENABLE_EMBEDDINGS", "false").lower() == "true"
+
+# Modelo de embeddings a usar (solo si ENABLE_EMBEDDINGS=true)
+# Opciones recomendadas por tamaño:
+#   - 'paraphrase-multilingual-MiniLM-L12-v2' (~120MB) - RECOMENDADO para RAM limitada
+#   - 'distiluse-base-multilingual-cased-v2' (~135MB)
+#   - 'hiiamsid/sentence_similarity_spanish_es' (~500MB) - Mejor calidad, más memoria
+EMBEDDING_MODEL = os.getenv(
+    "EMBEDDING_MODEL", 
+    "paraphrase-multilingual-MiniLM-L12-v2"  # Modelo ligero por defecto
+)
+
+print(f"🧠 Embeddings habilitados: {ENABLE_EMBEDDINGS}")
+if ENABLE_EMBEDDINGS:
+    print(f"   Modelo: {EMBEDDING_MODEL}")
+
+# =====================================
 # Configuración CORS
 # =====================================
 CORS_ORIGINS_ENV = os.getenv("CORS_ORIGINS", "")

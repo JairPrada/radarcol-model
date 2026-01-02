@@ -7,7 +7,9 @@ from .settings import (
     ALLOWED_ORIGINS,
     LOG_LEVEL,
     GROQ_API_KEY,
-    RUTA_ARTEFACTOS
+    RUTA_ARTEFACTOS,
+    ENABLE_EMBEDDINGS,
+    EMBEDDING_MODEL
 )
 
 __all__ = [
@@ -18,5 +20,7 @@ __all__ = [
     "ALLOWED_ORIGINS",
     "LOG_LEVEL",
     "GROQ_API_KEY",
-    "RUTA_ARTEFACTOS"
+    "RUTA_ARTEFACTOS",
+    "ENABLE_EMBEDDINGS",
+    "EMBEDDING_MODEL"
 ]

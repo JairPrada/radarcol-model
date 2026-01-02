@@ -159,6 +159,16 @@ LOG_LEVEL=INFO
 # Free tier: 30 req/min, 14,400 req/día
 GROQ_API_KEY=tu_api_key_de_groq_aqui
 RUTA_ARTEFACTOS=data/artifacts
+
+# Configuración de Embeddings (Análisis Semántico)
+# false = Modo ligero (~200MB) - Recomendado para desarrollo local o free tier
+# true = Modo completo (~600MB) - Requiere > 1GB RAM disponible
+ENABLE_EMBEDDINGS=false
+
+# Modelo de embeddings (solo si ENABLE_EMBEDDINGS=true)
+# Opciones: paraphrase-multilingual-MiniLM-L12-v2 (~120MB, recomendado)
+#           hiiamsid/sentence_similarity_spanish_es (~500MB, mejor calidad)
+EMBEDDING_MODEL=paraphrase-multilingual-MiniLM-L12-v2
 ```
 
 5. **Ejecutar el servidor**
@@ -219,11 +229,17 @@ El proyecto incluye un archivo `render.yaml` para despliegue automático.
 
 En el Blueprint screen, agrega:
 
-| Variable | Valor | ¿Secreto? |
-|----------|-------|-----------|
-| `GROQ_API_KEY` | `tu_api_key_de_groq` | ✅ Sí |
-| `CORS_ORIGINS` | `https://tu-frontend.vercel.app,http://localhost:3000` | No |
-| `BASE_URL` | `https://www.datos.gov.co/resource/jbjy-vk9h.json` | No |
+| Variable | Valor | ¿Secreto? | Descripción |
+|----------|-------|-----------|-------------|
+| `GROQ_API_KEY` | `tu_api_key_de_groq` | ✅ Sí | API Key de Groq LLM |
+| `CORS_ORIGINS` | `https://tu-frontend.vercel.app,http://localhost:3000` | No | Dominios permitidos |
+| `BASE_URL` | `https://www.datos.gov.co/resource/jbjy-vk9h.json` | No | API datos.gov.co |
+| `ENABLE_EMBEDDINGS` | `false` | No | Habilitar embeddings (ver nota) |
+
+**📝 Nota sobre ENABLE_EMBEDDINGS:**
+- `false` (recomendado para free tier): Solo usa ML + LLM (~200-300MB RAM)
+- `true`: Habilita análisis semántico completo (~600-800MB RAM)
+- Para Render free tier (512MB), **debe estar en `false`**
 
 6. **Deploy**
    - Haz clic en **"Apply"**
@@ -256,6 +272,26 @@ En el Dashboard de Render, ve a **Environment** y agrega estas variables:
 | `BASE_URL` | `https://www.datos.gov.co/resource/jbjy-vk9h.json` | URL de la API de datos.gov.co |
 | `RUTA_ARTEFACTOS` | `data/artifacts` | Ruta a los artefactos del modelo ML |
 | `LOG_LEVEL` | `INFO` | Nivel de logging |
+| `ENABLE_EMBEDDINGS` | `false` | ⚠️ Deshabilitar embeddings para free tier (512MB) |
+| `EMBEDDING_MODEL` | `paraphrase-multilingual-MiniLM-L12-v2` | Modelo ligero (solo si ENABLE_EMBEDDINGS=true) |
+
+**⚠️ IMPORTANTE - Configuración de Memoria:**
+
+Render free tier tiene un límite de **512MB de RAM**. El motor de análisis tiene dos modos:
+
+1. **Modo Ligero (Recomendado para Free Tier):**
+   - `ENABLE_EMBEDDINGS=false`
+   - Usa solo ML (IsolationForest) + LLM (Groq)
+   - Consumo: ~200-300MB RAM
+   - ✅ Funciona perfectamente en free tier
+
+2. **Modo Completo (Requiere >1GB RAM):**
+   - `ENABLE_EMBEDDINGS=true`
+   - Usa ML + LLM + Embeddings semánticos
+   - Consumo: ~600-800MB RAM
+   - ❌ Excede límite de free tier → Error "Out of Memory"
+
+Para planes pagos de Render con más memoria, puedes habilitar `ENABLE_EMBEDDINGS=true` para análisis semántico completo.
 
 ### ✅ Verificar el Despliegue
 
