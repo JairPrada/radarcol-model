@@ -6,7 +6,6 @@ import re
 import time
 import os
 from groq import Groq
-from sentence_transformers import SentenceTransformer
 
 class RadarColInferencia:
     def __init__(self, groq_api_key=None, ruta_artefactos="data/artifacts"):
@@ -85,6 +84,7 @@ class RadarColInferencia:
             try:
                 print(f"   🧠 Cargando embeddings: {self.embedding_model_name}")
                 print("   ⏱️  Esto puede tomar 10-30 segundos...")
+                from sentence_transformers import SentenceTransformer
                 self.model_nlp = SentenceTransformer(
                     self.embedding_model_name, 
                     device="cpu"

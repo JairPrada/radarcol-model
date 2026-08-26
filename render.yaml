@@ -1,0 +1,27 @@
+services:
+  - type: web
+    name: radarcol-model-api
+    runtime: python
+    plan: free
+    buildCommand: pip install --upgrade pip && pip install -r requirements.txt
+    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.0
+      - key: ENABLE_EMBEDDINGS
+        value: "false"
+      - key: EMBEDDING_MODEL
+        value: paraphrase-multilingual-MiniLM-L12-v2
+      - key: CORS_ORIGINS
+        value: https://radarcol.com,https://www.radarcol.com,http://localhost:3000
+      - key: LOG_LEVEL
+        value: INFO
+      - key: RUTA_ARTEFACTOS
+        value: data/artifacts
+      - key: GROQ_API_KEY
+        sync: false
+      - key: TURSO_DATABASE_URL
+        sync: false
+      - key: TURSO_AUTH_TOKEN
+        sync: false
