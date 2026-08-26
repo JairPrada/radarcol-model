@@ -35,7 +35,6 @@ class RadarColInferencia:
             print(f"   📁 Intentando cargar desde: {ruta_artefactos}")
             
             # Verificar que la ruta existe
-            import os
             if not os.path.exists(ruta_artefactos):
                 raise FileNotFoundError(f"Directorio de artefactos no encontrado: {ruta_artefactos}")
             
