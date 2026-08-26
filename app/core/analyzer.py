@@ -14,7 +14,7 @@ class RadarColInferencia:
         # 1. Configuración Groq LLM
         self.usar_llm = False
         self.client = None
-        self.model_name = "llama-3.1-8b-instant"  # Modelo rápido y eficiente
+        self.model_name = os.getenv("GROQ_MODEL", "qwen/qwen3.8-27b")
         
         try:
             # Si pasas la key explícita o está en variables de entorno
